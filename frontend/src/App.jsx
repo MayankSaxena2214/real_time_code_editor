@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import "./App.css"
 import Editor from "@monaco-editor/react";
 import io from "socket.io-client";
-const socket=io("http://localhost:5000");
+const socket=io("https://real-time-code-editor-di4p.onrender.com");
 
 const App = () => {
   const [language,setLanguage]=useState("javascript");
