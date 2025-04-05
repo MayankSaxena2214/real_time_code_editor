@@ -14,7 +14,8 @@ const App = () => {
   const [copySuccess,setCopySuccess]=useState("");
   const [users,setUsers]=useState([]);
   const [typing,setTyping]=useState(false);
-
+  const [output,setOutput]=useState("");
+  const [version,setVersion]=useState("*"); //all version
   useEffect(()=>{
     socket.on("userJoined",(users)=>{
       setUsers(users);
@@ -31,6 +32,10 @@ const App = () => {
 
     socket.on("languageUpdate",(newLanguage)=>{
       setLanguage(newLanguage);
+    });
+
+    socket.on("codeResponse",(response)=>{
+      setOutput(response.run.output);
     })
     //to prevent it run again and again, we will give the clean up
     return ()=>{
@@ -38,6 +43,7 @@ const App = () => {
       socket.off("userJoined");
       socket.off("codeUpdated");
       socket.off("languageUpdated");
+      socket.off("codeResponse");
     }
   },[])
 
@@ -79,6 +85,11 @@ const App = () => {
     
     socket.emit("languageChange",{roomId,language:newLanguage});
   }
+
+  const runCode=()=>{
+    socket.emit("compileCode",{code,roomId,language,version});
+
+  }
   useEffect(()=>{
     
     const handleBeforeUnload=()=>{
@@ -96,7 +107,7 @@ const App = () => {
   if(!joined){
     return <div className='join-container'>
         <div className="join-form">
-          <h1>Join Code Room</h1>
+          <h1>Join Code Room  </h1>
           <input type="text" placeholder='Room Id' value={roomId} onChange={(e)=>setRoomId(e.target.value)}  />
 
           <input type="text" placeholder='Username' value={userName} onChange={(e)=>setUserName(e.target.value)}  />
@@ -143,8 +154,9 @@ const App = () => {
       </div>
       {/* Editor */}
 
+      <div className='editor-wrapper'>
       <Editor
-        height={"100%"}
+        height={"60%"}
         defaultLanguage={language}
         language={language}
         value={code}
@@ -157,7 +169,9 @@ const App = () => {
           }
         }
       />
-      
+      <button className='run-btn' onClick={runCode}>Execute </button>
+      <textarea name="" id="" className='output-console' value={output} readOnly placeholder='Output will appear here'/>
+      </div>
     </div>
   )
 }

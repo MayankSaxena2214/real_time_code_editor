@@ -2,10 +2,27 @@ import express from "express";
 import http from "http";
 import {Server} from "socket.io";
 import path from "path"
+import axios from "axios";
 
 const app=express();
 const server=http.createServer(app);
 
+//to save render delay 
+const url = `https://real-time-code-editor-di4p.onrender.com`;
+const interval = 30000;
+
+function reloadWebsite() {
+  axios
+    .get(url)
+    .then((response) => {
+      console.log("website reloded");
+    })
+    .catch((error) => {
+      console.error(`Error : ${error.message}`);
+    });
+}
+
+setInterval(reloadWebsite, interval);
 const io=new Server(server,{ 
     cors:{
         origin:"*"
@@ -61,6 +78,23 @@ io.on("connection",(socket)=>{
     });
     socket.on("typing",({roomId,userName})=>{
         socket.to(roomId).emit("userTyping",userName);
+    });
+    socket.on("compileCode",async({code,roomId,language,version})=>{
+        if(rooms.has(roomId)){
+            const room=rooms.get(roomId);
+            const response=await axios.post("https://emkc.org/api/v2/piston/execute",{
+                language,
+                version,
+                files:[
+                    {
+                        content:code
+                    }
+                ]
+            });
+            room.output=response.data.run.output;
+            io.to(roomId).emit("codeResponse",response.data);
+            
+        }
     })
     socket.on("disconnect",()=>{
         if(currentRoom && currentUser){
